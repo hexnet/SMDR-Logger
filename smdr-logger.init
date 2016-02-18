@@ -1,0 +1,34 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          smdr-logging
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Avaya IP Office 500 SMDR Logger.
+# Description:       Starts the logger to allow capturing the Avaya IP Office 500 SMDR feed.
+### END INIT INFO
+
+case "$1" in
+'start')
+        . /etc/smdr-logger/smdr.conf
+	N=`ps -ef | grep smdr-logger | grep -v grep | wc -l`
+	if [ $N -eq 1 ]; then
+	echo "smdr-logger is already running"
+	else echo "$(date) Connecting to PBX $PBXIP on port number $PBXPORT" >> /var/log/smdr-logger/smdr.log
+        perl /usr/local/sbin/smdr-logger $PBXIP $PBXPORT >/dev/null &
+        echo "SMDR-logger has started." 
+	fi
+	;;
+'stop')
+	PID=`ps aux | grep smdr-logger | grep -v grep | awk '{print $2}'`
+	if ! kill $PID > /dev/null 2>&1; then
+	echo "Could not send SIGTERM to process $PID."
+	fi
+	echo "$(date) smdr-logger service has stopped." >> /var/log/smdr-logger/smdr.log
+	;;
+*)
+	echo "Usage: $0 { start | stop }"
+	;;
+esac
+exit 0

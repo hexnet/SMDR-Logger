@@ -1,0 +1,99 @@
+#!/usr/bin/perl
+#
+# Connect to IP500 SMDR connector then log the
+# calls to text files and SQL database.
+#
+use DBI;
+use strict;
+use warnings;
+use IO::Socket;
+use POSIX;
+my $host = shift || $ARGV[0];
+my $port = shift || $ARGV[1];
+my $proto = getprotobyname('tcp');
+my $iaddr = inet_aton($host);
+my $paddr = sockaddr_in($port, $iaddr);
+
+for(;;){
+
+  my $sock = new IO::Socket::INET(PeerAddr => $host, PeerPort => $port,Proto => "tcp",)
+  or die "Cannot connect to PBX at address: $host port: $port: $!";
+
+  while (<$sock>) {
+    s/^\0+//; # Remove leading null characters
+    print $_;
+    chomp ($_);
+    #$_ =~ s/^[^ ]+//;
+    if ($_ =~m"/") {
+      &TXTout; #send data to CSV TXT subroutine
+    #  &DBconnect; #send data to the database subroutine
+    }
+  }
+
+  sub TXTout {
+    my $dir = "/var/log/smdr-logger/";
+    my $filename = strftime("%B%d%Y",localtime(time));
+    my $fileexpression = $dir.$filename.".csv";
+
+    open (my $fh, '>>:crlf', $fileexpression) or die "Cannot create file in $dir";
+    print $fh $_;
+    close $fh;
+  }
+
+  sub DBconnect {
+    my $driver = "mysql";
+    my $database = "smdr";
+    my $dsn = "DBI:$driver:database=$database";
+    my $userid = "smdr";
+    my $password = "myp4ss!";
+
+    my $date       = ""; # First split of first column using space delimiter
+    my $time       = ""; # Second split of first column using space delimiter
+    my $cstart     = ""; # Call Start
+    my $cdur       = ""; # Call Duration
+    my $wtime      = ""; # Wait Time
+    my $caller     = ""; # Caller
+    my $dir        = ""; # Direction
+    my $called     = ""; # Called
+    my $dialled    = ""; # Dialled
+    my $acccode    = ""; # Account Code
+    my $int        = ""; # Internal
+    my $callid     = ""; # Call ID
+    my $cont       = ""; # Continuation
+    my $p1dev      = ""; # Party 1 Device
+    my $p1name     = ""; # Party 1 Name
+    my $p2dev      = ""; # Party 2 Device
+    my $p2name     = ""; # Party 2 Name
+    my $htime      = ""; # Hold Time (Total)
+    my $ptime      = ""; # Park Time (Total)
+    my $avalid     = ""; # Auth Valid
+    my $acode      = ""; # Auth Code
+    my $ucharged   = ""; # User Charged
+    my $callcharge = ""; # Call Charge
+    my $cur        = ""; # Currency
+    my $aocam      = ""; # AOC Amount
+    my $calluni    = ""; # Call Units
+    my $aocuni     = ""; # AOC Units
+    my $cpuni      = ""; # Cost per Unit
+    my $markup     = ""; # Mark Up
+    my $extarc     = ""; # Ex Targeting Cause
+    my $extari     = ""; # Ex Targeting ID
+    my $extarn     = ""; # Ex Targeting Number
+ 
+
+    my $dbh = DBI->connect($dsn, $userid, $password) or die $DBI::errstr;
+    my $sth = $dbh->prepare("INSERT into calls
+      (,,,,,,,,,,,)
+      VALUES
+      (?,?,?,?,?,?,?,?,?)");
+
+    #$sth->execute($date,$time,$cstart,$cdur,$wtime,$caller,$dir,$called,$dialled,$acccode,$int,$callid,$cont,$p1dev,$p1name,$p2dev,$p2name,$htime,$ptime,$avalid,$acode,$ucharged,$callcharge,$cur,$aocam,$calluni,$aocuni,$cpuni,$markup,$extarc,$extari,$extarn) or die $DBI::errstr;
+    $sth->finish();
+    $dbh->commit or die $DBI::errstr;
+    $dbh->disconnect or warn $dbh->errstr;
+  } 
+
+  close $sock or die "close: $!";
+  print "socket closed";
+  print "<br />";
+}
