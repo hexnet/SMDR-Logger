@@ -1,7 +1,9 @@
 ## SMDR-Logger
-An SMDR connector with logging for the Avaya IP Office 500 PBX
+An SMDR connector with logging for the Avaya IP Office 500 PBX for GNU\Linux
 
 ### Use
+
+Download the ZIP or clone this repository.
 
 Make sure you have both perl and libdbi-perl installed
 
