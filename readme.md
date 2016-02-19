@@ -1,5 +1,5 @@
 ## SMDR-Logger
-An SMDR connector with logging for the Avaya IP Office 500 PBX for GNU\Linux
+An SMDR connector with logging for the Avaya IP Office 500 PBX for GNU/Linux
 
 ### Use
 
