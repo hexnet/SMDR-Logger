@@ -32,7 +32,7 @@ for(;;){
 
   sub TXTout {
     my $dir = "/var/log/smdr-logger/";
-    my $filename = strftime("%B%d%Y",localtime(time));
+    my $filename = strftime("%Y%m%d",localtime(time));
     my $fileexpression = $dir.$filename.".csv";
 
     open (my $fh, '>>:crlf', $fileexpression) or die "Cannot create file in $dir";
